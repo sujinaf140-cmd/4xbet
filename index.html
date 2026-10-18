@@ -91,12 +91,17 @@
 
     <div style="padding: 0 15px; font-size: 15px; color: #cbd5e1; margin-bottom: 8px;">Providers</div>
     
-    <!-- প্রোভাইডার ক্যাটাগরি বা ট্যাগ স্ক্রল মেনু -->
+    <!-- প্রোভাইডার ট্যাব বা স্ক্রল মেনু -->
     <div class="provider-scroll" id="provider-tabs">
         <div class="provider-tab active" onclick="filterGames('all', this)">All Games</div>
         <div class="provider-tab" onclick="filterGames('evolution', this)">Evolution</div>
         <div class="provider-tab" onclick="filterGames('pg', this)">PG Soft</div>
         <div class="provider-tab" onclick="filterGames('jili', this)">Jili</div>
+    </div>
+
+    <!-- গেম সার্চ বক্স -->
+    <div style="padding: 0 10px 10px 10px;">
+        <input type="text" id="game-search-input" placeholder="🔍 গেম সার্চ করুন..." onkeyup="searchGames()" style="width: 100%; padding: 10px; background: #132238; border: 1px solid #1e3e62; color: white; border-radius: 8px; box-sizing: border-box; font-size: 13px;">
     </div>
 
     <div class="game-grid">
@@ -215,7 +220,7 @@
             try {
                 const res = await createUserWithEmailAndPassword(auth, fakeEmail, pass);
                 await setDoc(doc(db, "users", res.user.uid), { phone: phone, balance: 100, createdAt: new Date() });
-                alert("রেজিস্ট্রেশন সফল! ১০০ টাকা বোনাস দেওয়া হয়েছে。");
+                alert("রেজিস্ট্রেশন সফল! ১০০ টাকা বোনাস দেওয়া হয়েছে।");
                 closeModal('regModal');
             } catch (err) { alert("Error: " + err.message); }
         };
@@ -321,7 +326,6 @@
                 });
                 const data = await response.json();
                 
-                // বিভিন্ন রেসপন্স স্ট্রাকচার হ্যান্ডেল করার জন্য চেক করা হচ্ছে
                 const gamesList = data.games || data.data || (Array.isArray(data) ? data : []);
                 
                 if(gamesList.length > 0) {
@@ -368,15 +372,55 @@
             document.querySelectorAll('.provider-tab').forEach(tab => tab.classList.remove('active'));
             element.classList.add('active');
 
-            if (provider === 'all') {
-                renderGames(allGamesData);
-            } else {
-                const filtered = allGamesData.filter(game => {
+            const keyword = document.getElementById('game-search-input').value.toLowerCase().trim();
+
+            let targetGames = allGamesData;
+            if (provider !== 'all') {
+                targetGames = allGamesData.filter(game => {
                     const prov = (game.provider || game.vendor || game.provider_code || "").toLowerCase();
                     return prov.includes(provider);
                 });
-                renderGames(filtered);
             }
+
+            if (keyword !== "") {
+                targetGames = targetGames.filter(game => {
+                    const gameName = (game.name || game.game_name || "").toLowerCase();
+                    return gameName.includes(keyword);
+                });
+            }
+
+            renderGames(targetGames);
+        };
+
+        // গেম সার্চ করার ফাংশন
+        window.searchGames = function() {
+            const keyword = document.getElementById('game-search-input').value.toLowerCase().trim();
+            const activeTab = document.querySelector('.provider-tab.active');
+            
+            let currentProvider = 'all';
+            if(activeTab) {
+                const onclickAttr = activeTab.getAttribute('onclick');
+                if(onclickAttr.includes('evolution')) currentProvider = 'evolution';
+                else if(onclickAttr.includes('pg')) currentProvider = 'pg';
+                else if(onclickAttr.includes('jili')) currentProvider = 'jili';
+            }
+
+            let targetGames = allGamesData;
+            if (currentProvider !== 'all') {
+                targetGames = allGamesData.filter(game => {
+                    const prov = (game.provider || game.vendor || game.provider_code || "").toLowerCase();
+                    return prov.includes(currentProvider);
+                });
+            }
+
+            if (keyword !== "") {
+                targetGames = targetGames.filter(game => {
+                    const gameName = (game.name || game.game_name || "").toLowerCase();
+                    return gameName.includes(keyword);
+                });
+            }
+
+            renderGames(targetGames);
         };
 
         // গেম লঞ্চ করা
