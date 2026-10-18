@@ -201,7 +201,7 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const apiKey = "C9360812-A9D5-4B4F-A07C-6247BD8543F1"; // নতুন আপডেট করা টোকেন
+        const apiKey = "C9360812-A9D5-4B4F-A07C-6247BD8543F1";
 
         let allGamesData = [];
 
@@ -316,20 +316,48 @@
             alert("লিংক কপি হয়েছে!");
         };
 
-        // মেগানোডস v2 থেকে গেম লিস্ট ফেচ করা (নেটলিফি প্রক্সি ব্যবহার করে)
+        // মেগানোডস v2 ডকুমেন্টেশন অনুযায়ী গেম ফেচ করা (/game/games এবং /game/providers ব্যবহার করে)
         async function loadGames() {
             try {
-                const response = await fetch("/api/game/list", {
+                // ১. প্রোভাইডার লিস্ট ফেচ করা
+                const provResponse = await fetch("/game/providers", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
                     body: JSON.stringify({ lang: "en" })
                 });
-                const data = await response.json();
-                
-                const gamesList = data.games || data.data || (Array.isArray(data) ? data : []);
-                
-                if(gamesList.length > 0) {
-                    allGamesData = gamesList;
+                const provData = await provResponse.json();
+                const providers = provData.data || provData.providers || [];
+
+                let allFetchedGames = [];
+
+                if (providers.length > 0) {
+                    // প্রতিটি প্রোভাইডার থেকে গেমের লিস্ট আনা
+                    for (let p of providers.slice(0, 5)) { // প্রথম ৫টি প্রোভাইডার থেকে গেম লোড করা হচ্ছে
+                        const pCode = p.provider_code || p.code;
+                        const res = await fetch("/game/games", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+                            body: JSON.stringify({ provider_code: pCode, lang: "en", offset: 0, limit: 50 })
+                        });
+                        const gData = await res.json();
+                        const list = (gData.data && gData.data.list) ? gData.data.list : (gData.games || []);
+                        allFetchedGames = allFetchedGames.concat(list);
+                    }
+                }
+
+                // যদি কোনো কারণে প্রোভাইডার থেকে না আসে, তবে ডিফল্ট এণ্ডপয়েন্ট ট্রাই করা
+                if (allFetchedGames.length === 0) {
+                    const fallbackRes = await fetch("/api/game/list", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+                        body: JSON.stringify({ lang: "en" })
+                    });
+                    const fallbackData = await fallbackRes.json();
+                    allFetchedGames = fallbackData.games || fallbackData.data || (Array.isArray(fallbackData) ? fallbackData : []);
+                }
+
+                if(allFetchedGames.length > 0) {
+                    allGamesData = allFetchedGames;
                     renderGames(allGamesData);
                 } else {
                     document.querySelector('.game-grid').innerHTML = `<div style="grid-column: span 2; text-align: center; color: #94a3b8; padding: 20px;">কোনো গেম পাওয়া যায়নি!</div>`;
@@ -352,7 +380,7 @@
 
             games.forEach(game => {
                 const gameName = game.name || game.game_name || "Game";
-                const gameImg = game.image_url || game.img || "";
+                const gameImg = game.image_url || game.game_image || game.img || "";
                 const gameSymbol = game.symbol || game.game_symbol || "";
 
                 gameGrid.innerHTML += `
@@ -423,20 +451,20 @@
             renderGames(targetGames);
         };
 
-        // গেম লঞ্চ করা
+        // গেম লঞ্চ করা (ডকুমেন্টেশন অনুযায়ী /game/game-url বা /api/game/game-url)
         window.launchGame = async function(gameSymbol) {
             try {
                 const user = auth.currentUser;
                 if (!user) { alert("গেম খেলতে আগে লগইন করুন!"); openModal('loginModal'); return; }
 
-                const response = await fetch("/api/game/game-url", {
+                const response = await fetch("/game/game-url", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
                     body: JSON.stringify({ user_code: user.uid, symbol: gameSymbol, lang: "en" })
                 });
 
                 const data = await response.json();
-                const gameUrl = data.url || data.game_url;
+                const gameUrl = data.url || data.game_url || (data.data && data.data.url);
                 if (gameUrl) { window.location.href = gameUrl; }
                 else { alert("API Error: " + (data.message || "Unknown error")); }
             } catch (err) { alert("Error: " + err.message); }
