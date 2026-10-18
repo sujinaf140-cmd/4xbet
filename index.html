@@ -198,7 +198,7 @@
         const db = getFirestore(app);
         const apiKey = "1061341F-7540-4D0B-B59E-C90759F2179A";
 
-        let allGamesData = []; // গেমের ডাটা সেভ রাখার জন্য
+        let allGamesData = [];
 
         window.openModal = id => document.getElementById(id).style.display = 'flex';
         window.closeModal = id => document.getElementById(id).style.display = 'none';
@@ -215,7 +215,7 @@
             try {
                 const res = await createUserWithEmailAndPassword(auth, fakeEmail, pass);
                 await setDoc(doc(db, "users", res.user.uid), { phone: phone, balance: 100, createdAt: new Date() });
-                alert("রেজিস্ট্রেশন সফল! ১০০ টাকা বোনাস দেওয়া হয়েছে।");
+                alert("রেজিস্ট্রেশন সফল! ১০০ টাকা বোনাস দেওয়া হয়েছে。");
                 closeModal('regModal');
             } catch (err) { alert("Error: " + err.message); }
         };
@@ -308,10 +308,10 @@
 
         window.copyReferLink = function() {
             navigator.clipboard.writeText(document.getElementById('refer-link').value);
-            alert("লিংক কপি হয়েছেকালীন হয়েছে!");
+            alert("লিংক কপি হয়েছে!");
         };
 
-        // মেগানোডস v2 থেকে গেম লিস্ট ফেচ করা
+        // মেগানোডস v2 থেকে গেম লিস্ট ফেচ করা (নেটলিফি প্রক্সি ব্যবহার করে)
         async function loadGames() {
             try {
                 const response = await fetch("/api/game/list", {
@@ -321,9 +321,14 @@
                 });
                 const data = await response.json();
                 
-                if(data.games && data.games.length > 0) {
-                    allGamesData = data.games; // সব ডাটা সেভ রাখা হলো
-                    renderGames(allGamesData); // শুরুতে সব দেখাবে
+                // বিভিন্ন রেসপন্স স্ট্রাকচার হ্যান্ডেল করার জন্য চেক করা হচ্ছে
+                const gamesList = data.games || data.data || (Array.isArray(data) ? data : []);
+                
+                if(gamesList.length > 0) {
+                    allGamesData = gamesList;
+                    renderGames(allGamesData);
+                } else {
+                    document.querySelector('.game-grid').innerHTML = `<div style="grid-column: span 2; text-align: center; color: #94a3b8; padding: 20px;">কোনো গেম পাওয়া যায়নি!</div>`;
                 }
             } catch (err) {
                 console.error("Game load error: ", err);
@@ -342,13 +347,17 @@
             }
 
             games.forEach(game => {
+                const gameName = game.name || game.game_name || "Game";
+                const gameImg = game.image_url || game.img || "";
+                const gameSymbol = game.symbol || game.game_symbol || "";
+
                 gameGrid.innerHTML += `
                     <div class="game-card">
                         <div class="game-img">
-                            <img src="${game.image_url}" alt="${game.name}" style="width:100%; height:100%; object-fit:cover;">
+                            <img src="${gameImg}" alt="${gameName}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='https://placehold.co/150x95?text=4XBET'">
                         </div>
-                        <div style="font-size:12px; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 4px;">${game.name}</div>
-                        <button class="play-btn" onclick="launchGame('${game.symbol}')">Play Now</button>
+                        <div style="font-size:12px; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 4px;">${gameName}</div>
+                        <button class="play-btn" onclick="launchGame('${gameSymbol}')">Play Now</button>
                     </div>
                 `;
             });
@@ -356,16 +365,14 @@
 
         // প্রোভাইডার অনুযায়ী ফিল্টার করার ফাংশন
         window.filterGames = function(provider, element) {
-            // একটিভ ট্যাব স্টাইল পরিবর্তন
             document.querySelectorAll('.provider-tab').forEach(tab => tab.classList.remove('active'));
             element.classList.add('active');
 
             if (provider === 'all') {
                 renderGames(allGamesData);
             } else {
-                // মেগানোডসের এপিআই প্রোভাইডার প্রপার্টি অনুযায়ী ফিল্টার করা (যেমন game.provider বা game.vendor)
                 const filtered = allGamesData.filter(game => {
-                    const prov = (game.provider || game.vendor || "").toLowerCase();
+                    const prov = (game.provider || game.vendor || game.provider_code || "").toLowerCase();
                     return prov.includes(provider);
                 });
                 renderGames(filtered);
@@ -385,7 +392,8 @@
                 });
 
                 const data = await response.json();
-                if (data.url) { window.location.href = data.url; }
+                const gameUrl = data.url || data.game_url;
+                if (gameUrl) { window.location.href = gameUrl; }
                 else { alert("API Error: " + (data.message || "Unknown error")); }
             } catch (err) { alert("Error: " + err.message); }
         };
