@@ -26,9 +26,9 @@
 
         .banner { background: linear-gradient(135deg, #ff6500, #1e3e62); padding: 20px; text-align: center; margin: 10px; border-radius: 8px; }
         .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 10px; }
-        .game-card { background: #132238; border-radius: 8px; overflow: hidden; text-align: center; padding-bottom: 12px; }
-        .game-img { background: #1e3e62; height: 90px; display: flex; align-items: center; justify-content: center; font-size: 30px; }
-        .play-btn { background: #4ade80; color: #0b192c; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 8px; }
+        .game-card { background: #132238; border-radius: 8px; overflow: hidden; text-align: center; padding-bottom: 12px; border: 1px solid #1e3e62; }
+        .game-img { background: #1e3e62; height: 95px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        .play-btn { background: #4ade80; color: #0b192c; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 8px; font-size: 12px; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; }
         .modal-content { background: #132238; padding: 20px; border-radius: 10px; width: 85%; max-width: 320px; text-align: center; border: 1px solid #1e3e62; }
@@ -82,18 +82,10 @@
         <p>ফাস্ট পেমেন্ট ও লাইভ গেমিং</p>
     </div>
 
-    <div style="padding: 0 15px; font-size: 15px; color: #cbd5e1; margin-bottom: 10px;">Popular Games</div>
+    <div style="padding: 0 15px; font-size: 15px; color: #cbd5e1; margin-bottom: 10px;">Meganodes v2 Live Games</div>
     <div class="game-grid">
-        <div class="game-card">
-            <div class="game-img">🎣</div>
-            <div style="font-size:13px; margin-top:5px;">Ice Fishing</div>
-            <button class="play-btn" onclick="launchGame('IceFishing000001')">Play Now</button>
-        </div>
-        <div class="game-card">
-            <div class="game-img">🎴</div>
-            <div style="font-size:13px; margin-top:5px;">Baccarat</div>
-            <button class="play-btn" onclick="launchGame('InBarBacc0000002')">Play Now</button>
-        </div>
+        <!-- গেমগুলো অটোমেটিক মেগানোডস থেকে এখানে লোড হবে -->
+        <div style="grid-column: span 2; text-align: center; color: #94a3b8; padding: 20px;">গেম লোড হচ্ছে...</div>
     </div>
 
     <!-- রেজিস্ট্রেশন মোডাল -->
@@ -188,10 +180,12 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const apiKey = "1061341F-7540-4D0B-B59E-C90759F2179A";
 
         window.openModal = id => document.getElementById(id).style.display = 'flex';
         window.closeModal = id => document.getElementById(id).style.display = 'none';
 
+        // ইউজার রেজিস্ট্রেশন
         window.registerUser = async function() {
             const phone = document.getElementById('reg-phone').value.trim();
             const pass = document.getElementById('reg-pass').value;
@@ -209,6 +203,7 @@
             } catch (err) { alert("Error: " + err.message); }
         };
 
+        // ইউজার লগইন
         window.loginUserModal = async function() {
             const phone = document.getElementById('login-phone').value.trim();
             const pass = document.getElementById('login-pass').value;
@@ -236,6 +231,7 @@
             }
         });
 
+        // ডিপোজিট মোডাল ওপেন ও এডমিন পেমেন্ট নম্বর ফেচ
         window.openDepositModal = async function() {
             if (!auth.currentUser) { alert("আগে লগইন করুন!"); openModal('loginModal'); return; }
             openModal('depositModal');
@@ -250,6 +246,7 @@
             } catch(e) { console.error(e); }
         };
 
+        // ডিপোজিট সাবমিট
         window.submitDeposit = async function() {
             const user = auth.currentUser;
             const method = document.getElementById('dep-method').value;
@@ -263,11 +260,12 @@
                 await addDoc(collection(db, "deposits"), {
                     uid: user.uid, method, sender, amount, trx, status: "Pending", time: new Date()
                 });
-                alert("ডিপোজিট রিকোয়েস্ট জমা হয়েছে!");
+                alert("ডিপোজিট রিকোয়েস্ট সফলভাবে জমা হয়েছে!");
                 closeModal('depositModal');
             } catch(err) { alert("Error: " + err.message); }
         };
 
+        // উইথড্র সাবমিট
         window.submitWithdraw = async function() {
             const user = auth.currentUser;
             if(!user) { alert("লগইন করুন!"); openModal('loginModal'); return; }
@@ -279,9 +277,7 @@
             if(!number || isNaN(amount) || !pass) { alert("সব তথ্য সঠিকভাবে পূরণ করুন!"); return; }
 
             try {
-                // পাসওয়ার্ড ভেরিফাই করার জন্য রিকভারি লগইন ট্রাই করা হচ্ছে
                 await signInWithEmailAndPassword(auth, user.email, pass);
-
                 await addDoc(collection(db, "withdraws"), {
                     uid: user.uid, method, number, amount, status: "Pending", time: new Date()
                 });
@@ -302,12 +298,42 @@
             alert("লিংক কপি হয়েছে!");
         };
 
+        // মেগানোডস v2 থেকে গেম লিস্ট ও লোগো ফেচ করা
+        async function loadGames() {
+            try {
+                const response = await fetch("/api/game/list", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+                    body: JSON.stringify({ lang: "en" })
+                });
+                const data = await response.json();
+                
+                const gameGrid = document.querySelector('.game-grid');
+                if(data.games && data.games.length > 0) {
+                    gameGrid.innerHTML = "";
+                    data.games.forEach(game => {
+                        gameGrid.innerHTML += `
+                            <div class="game-card">
+                                <div class="game-img">
+                                    <img src="${game.image_url}" alt="${game.name}" style="width:100%; height:100%; object-fit:cover;">
+                                </div>
+                                <div style="font-size:12px; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 4px;">${game.name}</div>
+                                <button class="play-btn" onclick="launchGame('${game.symbol}')">Play Now</button>
+                            </div>
+                        `;
+                    });
+                }
+            } catch (err) {
+                console.error("Game load error: ", err);
+            }
+        }
+
+        // গেম লঞ্চ করা
         window.launchGame = async function(gameSymbol) {
             try {
                 const user = auth.currentUser;
-                if (!user) { alert("গেম খেলতে লগইন করুন!"); openModal('loginModal'); return; }
+                if (!user) { alert("গেম খেলতে আগে লগইন করুন!"); openModal('loginModal'); return; }
 
-                const apiKey = "1061341F-7540-4D0B-B59E-C90759F2179A";
                 const response = await fetch("/api/game/game-url", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
@@ -319,6 +345,9 @@
                 else { alert("API Error: " + (data.message || "Unknown error")); }
             } catch (err) { alert("Error: " + err.message); }
         };
+
+        // পেজ লোড হওয়ার সাথে গেম লিস্ট কল করা
+        loadGames();
     </script>
 </body>
 </html>
