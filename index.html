@@ -25,6 +25,13 @@
         .menu-item span { display: block; font-size: 20px; margin-bottom: 5px; }
 
         .banner { background: linear-gradient(135deg, #ff6500, #1e3e62); padding: 20px; text-align: center; margin: 10px; border-radius: 8px; }
+        
+        /* প্রোভাইডার ট্যাব বা স্ক্রল মেনু */
+        .provider-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 0 15px 10px 15px; white-space: nowrap; scrollbar-width: none; }
+        .provider-scroll::-webkit-scrollbar { display: none; }
+        .provider-tab { background: #132238; border: 1px solid #1e3e62; color: #cbd5e1; padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; font-weight: bold; }
+        .provider-tab.active { background: #ff6500; color: #fff; border-color: #ff6500; }
+
         .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 10px; }
         .game-card { background: #132238; border-radius: 8px; overflow: hidden; text-align: center; padding-bottom: 12px; border: 1px solid #1e3e62; }
         .game-img { background: #1e3e62; height: 95px; display: flex; align-items: center; justify-content: center; overflow: hidden; }
@@ -82,9 +89,18 @@
         <p>ফাস্ট পেমেন্ট ও লাইভ গেমিং</p>
     </div>
 
-    <div style="padding: 0 15px; font-size: 15px; color: #cbd5e1; margin-bottom: 10px;">Meganodes v2 Live Games</div>
+    <div style="padding: 0 15px; font-size: 15px; color: #cbd5e1; margin-bottom: 8px;">Providers</div>
+    
+    <!-- প্রোভাইডার ক্যাটাগরি বা ট্যাগ স্ক্রল মেনু -->
+    <div class="provider-scroll" id="provider-tabs">
+        <div class="provider-tab active" onclick="filterGames('all', this)">All Games</div>
+        <div class="provider-tab" onclick="filterGames('evolution', this)">Evolution</div>
+        <div class="provider-tab" onclick="filterGames('pg', this)">PG Soft</div>
+        <div class="provider-tab" onclick="filterGames('jili', this)">Jili</div>
+    </div>
+
     <div class="game-grid">
-        <!-- গেমগুলো অটোমেটিক মেগানোডস থেকে এখানে লোড হবে -->
+        <!-- গেমগুলো অটোমেটিক লোড হবে -->
         <div style="grid-column: span 2; text-align: center; color: #94a3b8; padding: 20px;">গেম লোড হচ্ছে...</div>
     </div>
 
@@ -111,7 +127,7 @@
         </div>
     </div>
 
-    <!-- ডিপোজিট মোডাল (এডমিনের নম্বর দেখাবে) -->
+    <!-- ডিপোজিট মোডাল -->
     <div class="modal" id="depositModal">
         <div class="modal-content">
             <h3>Deposit</h3>
@@ -129,7 +145,7 @@
         </div>
     </div>
 
-    <!-- উইথড্র মোডাল (ব্যাংক কার্ড ও পাসওয়ার্ড দিয়ে) -->
+    <!-- উইথড্র মোডাল -->
     <div class="modal" id="withdrawModal">
         <div class="modal-content">
             <h3>Withdraw (টাকা উত্তোলন)</h3>
@@ -182,10 +198,11 @@
         const db = getFirestore(app);
         const apiKey = "1061341F-7540-4D0B-B59E-C90759F2179A";
 
+        let allGamesData = []; // গেমের ডাটা সেভ রাখার জন্য
+
         window.openModal = id => document.getElementById(id).style.display = 'flex';
         window.closeModal = id => document.getElementById(id).style.display = 'none';
 
-        // ইউজার রেজিস্ট্রেশন
         window.registerUser = async function() {
             const phone = document.getElementById('reg-phone').value.trim();
             const pass = document.getElementById('reg-pass').value;
@@ -203,7 +220,6 @@
             } catch (err) { alert("Error: " + err.message); }
         };
 
-        // ইউজার লগইন
         window.loginUserModal = async function() {
             const phone = document.getElementById('login-phone').value.trim();
             const pass = document.getElementById('login-pass').value;
@@ -231,7 +247,6 @@
             }
         });
 
-        // ডিপোজিট মোডাল ওপেন ও এডমিন পেমেন্ট নম্বর ফেচ
         window.openDepositModal = async function() {
             if (!auth.currentUser) { alert("আগে লগইন করুন!"); openModal('loginModal'); return; }
             openModal('depositModal');
@@ -246,7 +261,6 @@
             } catch(e) { console.error(e); }
         };
 
-        // ডিপোজিট সাবমিট
         window.submitDeposit = async function() {
             const user = auth.currentUser;
             const method = document.getElementById('dep-method').value;
@@ -265,7 +279,6 @@
             } catch(err) { alert("Error: " + err.message); }
         };
 
-        // উইথড্র সাবমিট
         window.submitWithdraw = async function() {
             const user = auth.currentUser;
             if(!user) { alert("লগইন করুন!"); openModal('loginModal'); return; }
@@ -295,10 +308,10 @@
 
         window.copyReferLink = function() {
             navigator.clipboard.writeText(document.getElementById('refer-link').value);
-            alert("লিংক কপি হয়েছে!");
+            alert("লিংক কপি হয়েছেকালীন হয়েছে!");
         };
 
-        // মেগানোডস v2 থেকে গেম লিস্ট ও লোগো ফেচ করা
+        // মেগানোডস v2 থেকে গেম লিস্ট ফেচ করা
         async function loadGames() {
             try {
                 const response = await fetch("/api/game/list", {
@@ -308,25 +321,56 @@
                 });
                 const data = await response.json();
                 
-                const gameGrid = document.querySelector('.game-grid');
                 if(data.games && data.games.length > 0) {
-                    gameGrid.innerHTML = "";
-                    data.games.forEach(game => {
-                        gameGrid.innerHTML += `
-                            <div class="game-card">
-                                <div class="game-img">
-                                    <img src="${game.image_url}" alt="${game.name}" style="width:100%; height:100%; object-fit:cover;">
-                                </div>
-                                <div style="font-size:12px; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 4px;">${game.name}</div>
-                                <button class="play-btn" onclick="launchGame('${game.symbol}')">Play Now</button>
-                            </div>
-                        `;
-                    });
+                    allGamesData = data.games; // সব ডাটা সেভ রাখা হলো
+                    renderGames(allGamesData); // শুরুতে সব দেখাবে
                 }
             } catch (err) {
                 console.error("Game load error: ", err);
+                document.querySelector('.game-grid').innerHTML = `<div style="grid-column: span 2; text-align: center; color: #ef4444; padding: 20px;">গেম লোড করতে সমস্যা হয়েছে!</div>`;
             }
         }
+
+        // গেম রেন্ডার বা স্ক্রিনে দেখানোর ফাংশন
+        function renderGames(games) {
+            const gameGrid = document.querySelector('.game-grid');
+            gameGrid.innerHTML = "";
+            
+            if(games.length === 0) {
+                gameGrid.innerHTML = `<div style="grid-column: span 2; text-align: center; color: #94a3b8; padding: 20px;">কোনো গেম পাওয়া যায়নি!</div>`;
+                return;
+            }
+
+            games.forEach(game => {
+                gameGrid.innerHTML += `
+                    <div class="game-card">
+                        <div class="game-img">
+                            <img src="${game.image_url}" alt="${game.name}" style="width:100%; height:100%; object-fit:cover;">
+                        </div>
+                        <div style="font-size:12px; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; padding:0 4px;">${game.name}</div>
+                        <button class="play-btn" onclick="launchGame('${game.symbol}')">Play Now</button>
+                    </div>
+                `;
+            });
+        }
+
+        // প্রোভাইডার অনুযায়ী ফিল্টার করার ফাংশন
+        window.filterGames = function(provider, element) {
+            // একটিভ ট্যাব স্টাইল পরিবর্তন
+            document.querySelectorAll('.provider-tab').forEach(tab => tab.classList.remove('active'));
+            element.classList.add('active');
+
+            if (provider === 'all') {
+                renderGames(allGamesData);
+            } else {
+                // মেগানোডসের এপিআই প্রোভাইডার প্রপার্টি অনুযায়ী ফিল্টার করা (যেমন game.provider বা game.vendor)
+                const filtered = allGamesData.filter(game => {
+                    const prov = (game.provider || game.vendor || "").toLowerCase();
+                    return prov.includes(provider);
+                });
+                renderGames(filtered);
+            }
+        };
 
         // গেম লঞ্চ করা
         window.launchGame = async function(gameSymbol) {
