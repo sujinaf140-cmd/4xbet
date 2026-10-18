@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4xbet - Pro Betting Platform</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0b192c; color: #fff; margin: 0; padding-bottom: 70px; }
+        .top-header { background: #081018; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #1e3e62; }
+        .logo { font-size: 22px; font-weight: bold; color: #ff6500; display: flex; align-items: center; gap: 5px; }
+        .logo span { background: #ff6500; color: #fff; padding: 2px 6px; border-radius: 4px; font-size: 14px; }
+        .auth-buttons button { background: #ff6500; color: white; border: none; padding: 6px 14px; border-radius: 4px; font-weight: bold; cursor: pointer; margin-left: 5px; }
+        .auth-buttons .reg-btn { background: #008DDA; }
+        
+        .user-dash { background: linear-gradient(135deg, #1e3e62, #0b192c); padding: 15px; margin: 10px; border-radius: 10px; display: none; }
+        .balance-box { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .balance-amount { font-size: 24px; font-weight: bold; color: #4ade80; }
+        .dash-buttons { display: flex; gap: 8px; }
+        .dash-btn { flex: 1; background: rgba(255,255,255,0.1); border: 1px solid #ff6500; padding: 8px; text-align: center; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; }
+        
+        .member-center { background: #132238; margin: 10px; padding: 15px; border-radius: 10px; display: none; }
+        .section-heading { font-size: 14px; color: #94a3b8; margin-bottom: 10px; border-bottom: 1px solid #1e3e62; padding-bottom: 5px; }
+        .grid-menu { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; text-align: center; }
+        .menu-item { background: #1e3e62; padding: 10px 5px; border-radius: 8px; cursor: pointer; font-size: 11px; color: #cbd5e1; }
+        .menu-item span { display: block; font-size: 20px; margin-bottom: 5px; }
+
+        .banner { background: linear-gradient(135deg, #ff6500, #1e3e62); padding: 20px; text-align: center; margin: 10px; border-radius: 8px; }
+        .game-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 10px; }
+        .game-card { background: #132238; border-radius: 8px; overflow: hidden; text-align: center; padding-bottom: 12px; }
+        .game-img { background: #1e3e62; height: 90px; display: flex; align-items: center; justify-content: center; font-size: 30px; }
+        .play-btn { background: #4ade80; color: #0b192c; border: none; padding: 6px 15px; border-radius: 4px; cursor: pointer; font-weight: bold; margin-top: 8px; }
+
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #132238; padding: 20px; border-radius: 10px; width: 85%; max-width: 320px; text-align: center; border: 1px solid #1e3e62; }
+        .modal-content input, .modal-content select { width: 100%; padding: 10px; margin: 8px 0; background: #0b192c; border: 1px solid #1e3e62; color: white; border-radius: 6px; box-sizing: border-box; }
+        .modal-content button { width: 100%; padding: 10px; background: #ff6500; color: white; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        .close-link { display: block; margin-top: 10px; color: #94a3b8; font-size: 12px; cursor: pointer; }
+
+        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background: #081018; display: flex; justify-content: space-around; padding: 8px 0; border-top: 1px solid #1e3e62; z-index: 99; }
+        .nav-item { text-align: center; color: #94a3b8; font-size: 11px; cursor: pointer; }
+        .nav-item span { display: block; font-size: 18px; }
+        .nav-item.active { color: #ff6500; }
+    </style>
+</head>
+<body>
+
+    <div class="top-header">
+        <div class="logo">4XBET <span>WIN</span></div>
+        <div class="auth-buttons" id="auth-buttons-div">
+            <button onclick="openModal('loginModal')">Log in</button>
+            <button class="reg-btn" onclick="openModal('regModal')">Register</button>
+        </div>
+    </div>
+
+    <div class="user-dash" id="user-dash-div">
+        <div class="balance-box">
+            <div>UID: <span id="lbl-uid" style="color:#ff6500;">-</span></div>
+            <div class="balance-amount" id="lbl-balance">৳ 0.00</div>
+        </div>
+        <div class="dash-buttons">
+            <div class="dash-btn" onclick="openDepositModal()">Deposit</div>
+            <div class="dash-btn" onclick="openModal('withdrawModal')">Withdraw</div>
+            <div class="dash-btn" onclick="alert('Bank Account Secured')">Bank Acc</div>
+        </div>
+    </div>
+
+    <div class="member-center" id="member-center-div">
+        <div class="section-heading">Member Center</div>
+        <div class="grid-menu">
+            <div class="menu-item" onclick="alert('Rewards')"><span>🏆</span>Rewards</div>
+            <div class="menu-item" onclick="alert('Bet History')"><span>📊</span>Bet History</div>
+            <div class="menu-item" onclick="alert('Profit & Loss')"><span>📈</span>Profit & Loss</div>
+            <div class="menu-item" onclick="alert('Deposit Record')"><span>📑</span>Dep Record</div>
+            <div class="menu-item" onclick="alert('Withdraw Record')"><span>📜</span>Wd Record</div>
+            <div class="menu-item" onclick="openReferModal()"><span>👥</span>Invite</div>
+            <div class="menu-item" onclick="logoutUser()"><span>🚪</span>Logout</div>
+        </div>
+    </div>
+
+    <div class="banner">
+        <h3>FESTIVE SLOTS & CASINO</h3>
+        <p>ফাস্ট পেমেন্ট ও লাইভ গেমিং</p>
+    </div>
+
+    <div style="padding: 0 15px; font-size: 15px; color: #cbd5e1; margin-bottom: 10px;">Popular Games</div>
+    <div class="game-grid">
+        <div class="game-card">
+            <div class="game-img">🎣</div>
+            <div style="font-size:13px; margin-top:5px;">Ice Fishing</div>
+            <button class="play-btn" onclick="launchGame('IceFishing000001')">Play Now</button>
+        </div>
+        <div class="game-card">
+            <div class="game-img">🎴</div>
+            <div style="font-size:13px; margin-top:5px;">Baccarat</div>
+            <button class="play-btn" onclick="launchGame('InBarBacc0000002')">Play Now</button>
+        </div>
+    </div>
+
+    <!-- রেজিস্ট্রেশন মোডাল -->
+    <div class="modal" id="regModal">
+        <div class="modal-content">
+            <h3>Register</h3>
+            <input type="text" id="reg-phone" placeholder="ফোন নম্বর (Username)">
+            <input type="password" id="reg-pass" placeholder="Password">
+            <input type="password" id="reg-conf-pass" placeholder="Confirm password">
+            <button onclick="registerUser()">Register</button>
+            <span class="close-link" onclick="closeModal('regModal')">Cancel</span>
+        </div>
+    </div>
+
+    <!-- লগইন মোডাল -->
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <h3>Login</h3>
+            <input type="text" id="login-phone" placeholder="ফোন নম্বর (Username)">
+            <input type="password" id="login-pass" placeholder="Password">
+            <button onclick="loginUserModal()">Log in</button>
+            <span class="close-link" onclick="closeModal('loginModal')">Cancel</span>
+        </div>
+    </div>
+
+    <!-- ডিপোজিট মোডাল (এডমিনের নম্বর দেখাবে) -->
+    <div class="modal" id="depositModal">
+        <div class="modal-content">
+            <h3>Deposit</h3>
+            <div id="admin-payment-info" style="font-size:11px; color:#4ade80; background:#0b192c; padding:8px; border-radius:4px; margin-bottom:8px; text-align:left;">এডমিন নম্বর লোড হচ্ছে...</div>
+            <select id="dep-method">
+                <option value="Bkash">Bkash (সেন্ট মানি)</option>
+                <option value="Nagad">Nagad (ক্যাশআউট/সেন্ট মানি)</option>
+                <option value="Rocket">Rocket</option>
+            </select>
+            <input type="text" id="dep-sender" placeholder="আপনার পেমেন্ট নম্বর">
+            <input type="number" id="dep-amount" placeholder="টাকার পরিমাণ (BDT)">
+            <input type="text" id="dep-trx" placeholder="TrxID">
+            <button onclick="submitDeposit()">Submit Deposit</button>
+            <span class="close-link" onclick="closeModal('depositModal')">Close</span>
+        </div>
+    </div>
+
+    <!-- উইথড্র মোডাল (ব্যাংক কার্ড ও পাসওয়ার্ড দিয়ে) -->
+    <div class="modal" id="withdrawModal">
+        <div class="modal-content">
+            <h3>Withdraw (টাকা উত্তোলন)</h3>
+            <select id="w-method">
+                <option value="Bkash">Bkash</option>
+                <option value="Nagad">Nagad</option>
+                <option value="Rocket">Rocket</option>
+            </select>
+            <input type="text" id="w-number" placeholder="ব্যাংক/ওয়ালেট অ্যাকাউন্ট নম্বর">
+            <input type="number" id="w-amount" placeholder="উইথড্র পরিমাণ (BDT)">
+            <input type="password" id="w-pass" placeholder="আপনার লগইন পাসওয়ার্ড দিন">
+            <button onclick="submitWithdraw()">Submit Withdraw</button>
+            <span class="close-link" onclick="closeModal('withdrawModal')">Close</span>
+        </div>
+    </div>
+
+    <!-- রেফার মোডাল -->
+    <div class="modal" id="referModal">
+        <div class="modal-content">
+            <h3>Invite Friends</h3>
+            <input type="text" id="refer-link" readonly style="text-align:center;">
+            <button onclick="copyReferLink()">Copy Link</button>
+            <span class="close-link" onclick="closeModal('referModal')">Close</span>
+        </div>
+    </div>
+
+    <div class="bottom-nav">
+        <div class="nav-item active"><span>🏠</span>Home</div>
+        <div class="nav-item" onclick="openDepositModal()"><span>💰</span>Deposit</div>
+        <div class="nav-item" onclick="openModal('withdrawModal')"><span>💸</span>Withdraw</div>
+        <div class="nav-item" onclick="openReferModal()"><span>👥</span>Invite</div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyACedH_VcbSCLlJL6Kdor1I8OhfDEdLDKM",
+            authDomain: "xbet-d52e5.firebaseapp.com",
+            projectId: "xbet-d52e5",
+            storageBucket: "xbet-d52e5.firebasestorage.app",
+            messagingSenderId: "391044824702",
+            appId: "1:391044824702:web:f9669b281c5015d1cee22f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        window.openModal = id => document.getElementById(id).style.display = 'flex';
+        window.closeModal = id => document.getElementById(id).style.display = 'none';
+
+        window.registerUser = async function() {
+            const phone = document.getElementById('reg-phone').value.trim();
+            const pass = document.getElementById('reg-pass').value;
+            const confPass = document.getElementById('reg-conf-pass').value;
+
+            if(!phone || !pass) { alert("সব তথ্য পূরণ করুন!"); return; }
+            if(pass !== confPass) { alert("পাসওয়ার্ড মিলছে না!"); return; }
+
+            const fakeEmail = phone + "@4xbet.com";
+            try {
+                const res = await createUserWithEmailAndPassword(auth, fakeEmail, pass);
+                await setDoc(doc(db, "users", res.user.uid), { phone: phone, balance: 100, createdAt: new Date() });
+                alert("রেজিস্ট্রেশন সফল! ১০০ টাকা বোনাস দেওয়া হয়েছে।");
+                closeModal('regModal');
+            } catch (err) { alert("Error: " + err.message); }
+        };
+
+        window.loginUserModal = async function() {
+            const phone = document.getElementById('login-phone').value.trim();
+            const pass = document.getElementById('login-pass').value;
+            const fakeEmail = phone + "@4xbet.com";
+            try {
+                await signInWithEmailAndPassword(auth, fakeEmail, pass);
+                alert("লগইন সফল!");
+                closeModal('loginModal');
+            } catch (err) { alert("লগইন ফেইলড: " + err.message); }
+        };
+
+        window.logoutUser = async () => { await signOut(auth); location.reload(); };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                document.getElementById('auth-buttons-div').style.display = 'none';
+                document.getElementById('user-dash-div').style.display = 'block';
+                document.getElementById('member-center-div').style.display = 'block';
+                document.getElementById('lbl-uid').innerText = user.uid.substring(0,6);
+
+                const userDoc = await getDoc(doc(db, "users", user.uid));
+                if (userDoc.exists()) {
+                    document.getElementById('lbl-balance').innerText = "৳ " + (userDoc.data().balance || 0);
+                }
+            }
+        });
+
+        window.openDepositModal = async function() {
+            if (!auth.currentUser) { alert("আগে লগইন করুন!"); openModal('loginModal'); return; }
+            openModal('depositModal');
+            try {
+                const cfgDoc = await getDoc(doc(db, "settings", "payment"));
+                if (cfgDoc.exists()) {
+                    const d = cfgDoc.data();
+                    document.getElementById('admin-payment-info').innerHTML = `<b>এডমিন পেমেন্ট নম্বর:</b><br> বিকাশ: ${d.bkash || 'N/A'}<br> নগদ: ${d.nagad || 'N/A'}<br> রকেট: ${d.rocket || 'N/A'}`;
+                } else {
+                    document.getElementById('admin-payment-info').innerText = "এডমিন এখনো কোনো নম্বর সেট করেনি।";
+                }
+            } catch(e) { console.error(e); }
+        };
+
+        window.submitDeposit = async function() {
+            const user = auth.currentUser;
+            const method = document.getElementById('dep-method').value;
+            const sender = document.getElementById('dep-sender').value;
+            const amount = parseFloat(document.getElementById('dep-amount').value);
+            const trx = document.getElementById('dep-trx').value;
+
+            if(!sender || isNaN(amount) || !trx) { alert("সব তথ্য পূরণ করুন!"); return; }
+
+            try {
+                await addDoc(collection(db, "deposits"), {
+                    uid: user.uid, method, sender, amount, trx, status: "Pending", time: new Date()
+                });
+                alert("ডিপোজিট রিকোয়েস্ট জমা হয়েছে!");
+                closeModal('depositModal');
+            } catch(err) { alert("Error: " + err.message); }
+        };
+
+        window.submitWithdraw = async function() {
+            const user = auth.currentUser;
+            if(!user) { alert("লগইন করুন!"); openModal('loginModal'); return; }
+            const method = document.getElementById('w-method').value;
+            const number = document.getElementById('w-number').value;
+            const amount = parseFloat(document.getElementById('w-amount').value);
+            const pass = document.getElementById('w-pass').value;
+
+            if(!number || isNaN(amount) || !pass) { alert("সব তথ্য সঠিকভাবে পূরণ করুন!"); return; }
+
+            try {
+                // পাসওয়ার্ড ভেরিফাই করার জন্য রিকভারি লগইন ট্রাই করা হচ্ছে
+                await signInWithEmailAndPassword(auth, user.email, pass);
+
+                await addDoc(collection(db, "withdraws"), {
+                    uid: user.uid, method, number, amount, status: "Pending", time: new Date()
+                });
+                alert("উইথড্র রিকোয়েস্ট সফলভাবে জমা হয়েছে!");
+                closeModal('withdrawModal');
+            } catch(err) { alert("উইথড্র ফেইলড! পাসওয়ার্ড ভুল হয়েছে বা সমস্যা: " + err.message); }
+        };
+
+        window.openReferModal = function() {
+            const user = auth.currentUser;
+            if(!user) { alert("লগইন করুন!"); openModal('loginModal'); return; }
+            document.getElementById('refer-link').value = window.location.origin + "/?ref=" + user.uid;
+            openModal('referModal');
+        };
+
+        window.copyReferLink = function() {
+            navigator.clipboard.writeText(document.getElementById('refer-link').value);
+            alert("লিংক কপি হয়েছে!");
+        };
+
+        window.launchGame = async function(gameSymbol) {
+            try {
+                const user = auth.currentUser;
+                if (!user) { alert("গেম খেলতে লগইন করুন!"); openModal('loginModal'); return; }
+
+                const apiKey = "1061341F-7540-4D0B-B59E-C90759F2179A";
+                const response = await fetch("/api/game/game-url", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
+                    body: JSON.stringify({ user_code: user.uid, symbol: gameSymbol, lang: "en" })
+                });
+
+                const data = await response.json();
+                if (data.url) { window.location.href = data.url; }
+                else { alert("API Error: " + (data.message || "Unknown error")); }
+            } catch (err) { alert("Error: " + err.message); }
+        };
+    </script>
+</body>
+</html>
