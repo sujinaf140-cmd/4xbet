@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4xbet - Master Admin Panel</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0b192c; color: #fff; margin: 0; padding: 15px; }
+        /* সিকিউরিটি লগইন স্ক্রিন স্টাইল */
+        #admin-login-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0b192c; display: flex; justify-content: center; align-items: center; z-index: 9999; }
+        .login-box { background: #132238; padding: 25px; border-radius: 8px; width: 300px; text-align: center; border: 1px solid #1e3e62; }
+        .login-box input { width: 100%; padding: 10px; margin: 10px 0; background: #0b192c; border: 1px solid #1e3e62; color: #fff; border-radius: 4px; box-sizing: border-box; }
+        .login-box button { width: 100%; padding: 10px; background: #ff6500; color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; }
+
+        .header { background: #132238; padding: 15px; border-radius: 8px; text-align: center; margin-bottom: 20px; border: 1px solid #1e3e62; }
+        .section { background: #132238; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #1e3e62; }
+        h3 { margin-top: 0; color: #ff6500; border-bottom: 1px solid #1e3e62; padding-bottom: 8px; font-size: 15px; }
+        input { width: 100%; padding: 10px; margin: 8px 0; background: #0b192c; border: 1px solid #1e3e62; color: white; border-radius: 4px; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background: #ff6500; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 11px; }
+        th, td { border: 1px solid #1e3e62; padding: 6px; text-align: center; }
+        th { background: #0b192c; color: #ff6500; }
+        .approve-btn { background: #22c55e; padding: 4px 8px; font-size: 10px; cursor: pointer; color: white; border: none; border-radius: 3px; }
+    </style>
+</head>
+<body>
+
+    <!-- এডমিন সিকিউরিটি লগইন স্ক্রিন -->
+    <div id="admin-login-screen">
+        <div class="login-box">
+            <h3>Admin Login</h3>
+            <input type="text" id="adm-user" placeholder="Username">
+            <input type="password" id="adm-pass" placeholder="Password">
+            <button onclick="checkAdminLogin()">Login</button>
+        </div>
+    </div>
+
+    <!-- আসল এডমিন ড্যাশবোর্ড -->
+    <div id="admin-dashboard" style="display:none;">
+        <div class="header">
+            <h2>4xbet Master Admin Panel</h2>
+            <p>ইউজার লিস্ট, ব্যালেন্স, বেট রেকর্ড এবং পেমেন্ট কন্ট্রোল</p>
+        </div>
+
+        <div class="section">
+            <h3>📞 ডিপোজিট পেমেন্ট নম্বর সেট করুন</h3>
+            <input type="text" id="admin-bkash" placeholder="বিকাশ নম্বর">
+            <input type="text" id="admin-nagad" placeholder="নগদ নম্বর">
+            <input type="text" id="admin-rocket" placeholder="রকেট নম্বর">
+            <button onclick="savePaymentNumbers()">নম্বর সেভ করুন</button>
+        </div>
+
+        <div class="section">
+            <h3>💳 ইউজার ব্যালেন্স ম্যানেজ (UID দিয়ে)</h3>
+            <input type="text" id="target-user-uid" placeholder="ইউজারের UID দিন">
+            <input type="number" id="target-amount" placeholder="টাকার পরিমাণ (+ বা - দিন)">
+            <button onclick="updateUserBalance()">ব্যালেন্স আপডেট করুন</button>
+        </div>
+
+        <div class="section">
+            <h3>👥 রেজিস্টার্ড ইউজার ও ব্যালেন্স তালিকা</h3>
+            <table id="users-table">
+                <tr><th>UID</th><th>ফোন নম্বর (Username)</th><th>বর্তমান ব্যালেন্স</th></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h3>💰 ডিপোজিট রিকোয়েস্ট (Approve = ব্যালেন্স যোগ)</h3>
+            <table id="deposit-table">
+                <tr><th>UID</th><th>মেথড</th><th>প্রেরক নম্বর</th><th>টাকা</th><th>TrxID</th><th>অ্যাকশন</th></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h3>💸 উইথড্র রিকোয়েস্ট (Approve = ব্যালেন্স কাটা)</h3>
+            <table id="withdraw-table">
+                <tr><th>UID</th><th>মেথড</th><th>ওয়ালেট নম্বর</th><th>টাকা</th><th>অ্যাকশন</th></tr>
+            </table>
+        </div>
+
+        <div class="section">
+            <h3>📊 ইউজার বেটিং রেকর্ড (Bet History)</h3>
+            <table id="bet-table">
+                <tr><th>UID</th><th>গেম আইডি</th><th>স্ট্যাটাস/টাইম</th></tr>
+            </table>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, doc, setDoc, getDocs, collection, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyACedH_VcbSCLlJL6Kdor1I8OhfDEdLDKM",
+            authDomain: "xbet-d52e5.firebaseapp.com",
+            projectId: "xbet-d52e5",
+            storageBucket: "xbet-d52e5.firebasestorage.app",
+            messagingSenderId: "391044824702",
+            appId: "1:391044824702:web:f9669b281c5015d1cee22f"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // এডমিন লগইন চেক ফাংশন
+        window.checkAdminLogin = function() {
+            const u = document.getElementById('adm-user').value.trim();
+            const p = document.getElementById('adm-pass').value.trim();
+
+            if (u === "liton999qwe" && p === "Aaaa890890po") {
+                document.getElementById('admin-login-screen').style.display = 'none';
+                document.getElementById('admin-dashboard').style.display = 'block';
+                loadAdminData();
+            } else {
+                alert("ইউজারনেম অথবা পাসওয়ার্ড ভুল হয়েছে!");
+            }
+        };
+
+        window.savePaymentNumbers = async function() {
+            const bkash = document.getElementById('admin-bkash').value;
+            const nagad = document.getElementById('admin-nagad').value;
+            const rocket = document.getElementById('admin-rocket').value;
+            try {
+                await setDoc(doc(db, "settings", "payment"), { bkash, nagad, rocket });
+                alert("পেমেন্ট নম্বর সফলভাবে সেভ হয়েছে!");
+            } catch(err) { alert("এরর: " + err.message); }
+        };
+
+        window.updateUserBalance = async function() {
+            const uid = document.getElementById('target-user-uid').value.trim();
+            const amount = parseFloat(document.getElementById('target-amount').value);
+            if (!uid || isNaN(amount)) { alert("সঠিক UID এবং পরিমাণ দিন!"); return; }
+            try {
+                await updateDoc(doc(db, "users", uid), { balance: increment(amount) });
+                alert("ব্যালেন্স আপডেট হয়েছে!");
+                location.reload();
+            } catch (err) { alert("এরর: " + err.message); }
+        };
+
+        async function loadAdminData() {
+            const usersTable = document.getElementById('users-table');
+            const usersSnap = await getDocs(collection(db, "users"));
+            usersSnap.forEach((docSnap) => {
+                const u = docSnap.data();
+                usersTable.innerHTML += `<tr><td>${docSnap.id.substring(0,6)}...</td><td>${u.phone || 'N/A'}</td><td>৳${u.balance || 0}</td></tr>`;
+            });
+
+            const depTable = document.getElementById('deposit-table');
+            const depSnap = await getDocs(collection(db, "deposits"));
+            depSnap.forEach((docSnap) => {
+                const d = docSnap.data();
+                if(d.status === "Pending") {
+                    depTable.innerHTML += `<tr><td>${d.uid.substring(0,5)}</td><td>${d.method}</td><td>${d.sender}</td><td>৳${d.amount}</td><td>${d.trx}</td><td><button class="approve-btn" onclick="approveDeposit('${docSnap.id}', '${d.uid}', ${d.amount})">Approve</button></td></tr>`;
+                }
+            });
+
+            const wdTable = document.getElementById('withdraw-table');
+            const wdSnap = await getDocs(collection(db, "withdraws"));
+            wdSnap.forEach((docSnap) => {
+                const d = docSnap.data();
+                if(d.status === "Pending") {
+                    wdTable.innerHTML += `<tr><td>${d.uid.substring(0,5)}</td><td>${d.method}</td><td>${d.number}</td><td>৳${d.amount}</td><td><button class="approve-btn" onclick="approveWithdraw('${docSnap.id}', '${d.uid}', ${d.amount})">Approve</button></td></tr>`;
+                }
+            });
+
+            const betTable = document.getElementById('bet-table');
+            const betSnap = await getDocs(collection(db, "bets"));
+            betSnap.forEach((docSnap) => {
+                const b = docSnap.data();
+                betTable.innerHTML += `<tr><td>${b.uid ? b.uid.substring(0,5) : 'N/A'}</td><td>${b.gameSymbol || 'Casino'}</td><td>${b.time ? new Date(b.time.seconds*1000).toLocaleString() : 'Recent'}</td></tr>`;
+            });
+        }
+
+        window.approveDeposit = async function(docId, uid, amount) {
+            try {
+                await updateDoc(doc(db, "deposits", docId), { status: "Approved" });
+                await updateDoc(doc(db, "users", uid), { balance: increment(amount) });
+                alert("ডিপোজিট এপ্রুভ হয়েছে এবং ওয়ালেটে টাকা যোগ হয়েছে!");
+                location.reload();
+            } catch(e) { alert("এরর: " + e.message); }
+        };
+
+        window.approveWithdraw = async function(docId, uid, amount) {
+            try {
+                await updateDoc(doc(db, "withdraws", docId), { status: "Approved" });
+                await updateDoc(doc(db, "users", uid), { balance: increment(-amount) });
+                alert("উইথড্র এপ্রুভ হয়েছে এবং অ্যাকাউন্ট থেকে টাকা কেটে নেওয়া হয়েছে!");
+                location.reload();
+            } catch(e) { alert("এরর: " + e.message); }
+        };
+    </script>
+</body>
+</html>
