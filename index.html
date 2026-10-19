@@ -316,7 +316,7 @@
             alert("লিংক কপি হয়েছে!");
         };
 
-        // গেম ফেচ করা এবং এপিআই ফেইল করলে ফলব্যাক ডামি গেম লোড করার ফাংশন
+        // নিরাপদ গেম লোডিং ফাংশন (JSON Parse Error এড়ানোর জন্য ট্রাই-ক্যাচ ও টেক্সট ভ্যালিডেশন সহ)
         async function loadGames() {
             try {
                 const provResponse = await fetch("/game/providers", {
@@ -325,9 +325,9 @@
                     body: JSON.stringify({ lang: "en" })
                 });
                 
-                if (!provResponse.ok) throw new Error("API call failed");
-
-                const provData = await provResponse.json();
+                const provText = await provResponse.text();
+                if (!provText) throw new Error("Empty response");
+                const provData = JSON.parse(provText);
                 const providers = provData.data || provData.providers || [];
 
                 let allFetchedGames = [];
@@ -339,7 +339,9 @@
                             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
                             body: JSON.stringify({ provider_code: pCode, lang: "en", offset: 0, limit: 50 })
                         });
-                        const gData = await res.json();
+                        const gText = await res.text();
+                        if (!gText) continue;
+                        const gData = JSON.parse(gText);
                         const list = (gData.data && gData.data.list) ? gData.data.list : (gData.games || []);
                         allFetchedGames = allFetchedGames.concat(list);
                     }
@@ -349,12 +351,12 @@
                     allGamesData = allFetchedGames;
                     renderGames(allGamesData);
                 } else {
-                    throw new Error("No games found from API");
+                    throw new Error("No games found");
                 }
             } catch (err) {
-                console.warn("API load failed or CORS blocked. Loading sample test games:", err);
+                console.warn("API load failed or returned non-JSON. Loading sample test games:", err);
                 
-                // ফলব্যাক বা ডামি গেম ডাটা (যাতে ইউআই টেস্ট করার সময় গেম লোড না হওয়ার সমস্যা না করে)
+                // ফলব্যাক বা ডামি গেম ডাটা যাতে সাইট ক্র্যাশ না করে এবং গেম ডিসপ্লে সচল থাকে
                 allGamesData = [
                     { name: "Gates of Olympus", provider: "evolution", image_url: "https://placehold.co/150x95?text=Gates+Olympus", symbol: "gates_olympus" },
                     { name: "Starlight Princess", provider: "pg", image_url: "https://placehold.co/150x95?text=Starlight", symbol: "starlight_princess" },
@@ -460,7 +462,10 @@
                     body: JSON.stringify({ user_code: user.uid, symbol: gameSymbol, lang: "en" })
                 });
 
-                const data = await response.json();
+                const resText = await response.text();
+                if (!resText) { alert("API Error: Empty response"); return; }
+                const data = JSON.parse(resText);
+
                 const gameUrl = data.url || data.game_url || (data.data && data.data.url);
                 if (gameUrl) { window.location.href = gameUrl; }
                 else { alert("API Error: " + (data.message || "Unknown error")); }
