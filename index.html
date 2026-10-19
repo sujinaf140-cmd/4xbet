@@ -354,7 +354,7 @@
             } catch (err) {
                 console.warn("API load failed or CORS blocked. Loading sample test games:", err);
                 
-                // ফলব্যাক স্যাম্পল গেম ডাটা (যাতে ইউআই বা ডিজাইন টেস্ট করতে কোনো সমস্যা না হয়)
+                // ফলব্যাক বা ডামি গেম ডাটা (যাতে ইউআই টেস্ট করার সময় গেম লোড না হওয়ার সমস্যা না করে)
                 allGamesData = [
                     { name: "Gates of Olympus", provider: "evolution", image_url: "https://placehold.co/150x95?text=Gates+Olympus", symbol: "gates_olympus" },
                     { name: "Starlight Princess", provider: "pg", image_url: "https://placehold.co/150x95?text=Starlight", symbol: "starlight_princess" },
