@@ -316,23 +316,23 @@
             alert("লিংক কপি হয়েছে!");
         };
 
-        // মেগানোডস v2 ডকুমেন্টেশন অনুযায়ী গেম ফেচ করা (/game/games এবং /game/providers ব্যবহার করে)
+        // গেম ফেচ করা এবং এপিআই ফেইল করলে ফলব্যাক ডামি গেম লোড করার ফাংশন
         async function loadGames() {
             try {
-                // ১. প্রোভাইডার লিস্ট ফেচ করা
                 const provResponse = await fetch("/game/providers", {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
                     body: JSON.stringify({ lang: "en" })
                 });
+                
+                if (!provResponse.ok) throw new Error("API call failed");
+
                 const provData = await provResponse.json();
                 const providers = provData.data || provData.providers || [];
 
                 let allFetchedGames = [];
-
                 if (providers.length > 0) {
-                    // প্রতিটি প্রোভাইডার থেকে গেমের লিস্ট আনা
-                    for (let p of providers.slice(0, 5)) { // প্রথম ৫টি প্রোভাইডার থেকে গেম লোড করা হচ্ছে
+                    for (let p of providers.slice(0, 5)) {
                         const pCode = p.provider_code || p.code;
                         const res = await fetch("/game/games", {
                             method: "POST",
@@ -345,26 +345,23 @@
                     }
                 }
 
-                // যদি কোনো কারণে প্রোভাইডার থেকে না আসে, তবে ডিফল্ট এণ্ডপয়েন্ট ট্রাই করা
-                if (allFetchedGames.length === 0) {
-                    const fallbackRes = await fetch("/api/game/list", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
-                        body: JSON.stringify({ lang: "en" })
-                    });
-                    const fallbackData = await fallbackRes.json();
-                    allFetchedGames = fallbackData.games || fallbackData.data || (Array.isArray(fallbackData) ? fallbackData : []);
-                }
-
-                if(allFetchedGames.length > 0) {
+                if (allFetchedGames.length > 0) {
                     allGamesData = allFetchedGames;
                     renderGames(allGamesData);
                 } else {
-                    document.querySelector('.game-grid').innerHTML = `<div style="grid-column: span 2; text-align: center; color: #94a3b8; padding: 20px;">কোনো গেম পাওয়া যায়নি!</div>`;
+                    throw new Error("No games found from API");
                 }
             } catch (err) {
-                console.error("Game load error: ", err);
-                document.querySelector('.game-grid').innerHTML = `<div style="grid-column: span 2; text-align: center; color: #ef4444; padding: 20px;">গেম লোড করতে সমস্যা হয়েছে!</div>`;
+                console.warn("API load failed or CORS blocked. Loading sample test games:", err);
+                
+                // ফলব্যাক স্যাম্পল গেম ডাটা (যাতে ইউআই বা ডিজাইন টেস্ট করতে কোনো সমস্যা না হয়)
+                allGamesData = [
+                    { name: "Gates of Olympus", provider: "evolution", image_url: "https://placehold.co/150x95?text=Gates+Olympus", symbol: "gates_olympus" },
+                    { name: "Starlight Princess", provider: "pg", image_url: "https://placehold.co/150x95?text=Starlight", symbol: "starlight_princess" },
+                    { name: "Fortune Gems", provider: "jili", image_url: "https://placehold.co/150x95?text=Fortune+Gems", symbol: "fortune_gems" },
+                    { name: "Crazy Time", provider: "evolution", image_url: "https://placehold.co/150x95?text=Crazy+Time", symbol: "crazy_time" }
+                ];
+                renderGames(allGamesData);
             }
         }
 
@@ -380,7 +377,7 @@
 
             games.forEach(game => {
                 const gameName = game.name || game.game_name || "Game";
-                const gameImg = game.image_url || game.game_image || game.img || "";
+                const gameImg = game.image_url || game.game_image || game.img || "https://placehold.co/150x95?text=4XBET";
                 const gameSymbol = game.symbol || game.game_symbol || "";
 
                 gameGrid.innerHTML += `
@@ -451,7 +448,7 @@
             renderGames(targetGames);
         };
 
-        // গেম লঞ্চ করা (ডকুমেন্টেশন অনুযায়ী /game/game-url বা /api/game/game-url)
+        // গেম লঞ্চ করা
         window.launchGame = async function(gameSymbol) {
             try {
                 const user = auth.currentUser;
