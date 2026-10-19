@@ -6,10 +6,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// স্ট্যাটিক ফাইল বা ফ্রন্টএন্ড রান করার জন্য (যদি একই সাথে রাখতে চান)
+// স্ট্যাটিক ফাইল বা ফ্রন্টএন্ড রান করার জন্য
 app.use(express.static('public'));
 
-const API_TOKEN = 'C9360812-A9D5-4B4F-A07C-6247BD8543F1';
+const API_TOKEN = '1D61341F-7540-4D06-B59E-C90759F2179A'; // সঠিক মূল API Key এখানে দেওয়া হলো
 const BASE_URL = 'https://api.meganodesv2.com'; // মেগানোডস এপিআই বেস ইউআরএল
 
 // প্রক্সি রাউট: গেম প্রোভাইডার বা গেম লিস্ট ফেচ করার জন্য
