@@ -26,7 +26,6 @@
 
         .banner { background: linear-gradient(135deg, #ff6500, #1e3e62); padding: 20px; text-align: center; margin: 10px; border-radius: 8px; }
         
-        /* প্রোভাইডার ট্যাব বা স্ক্রল মেনু */
         .provider-scroll { display: flex; gap: 8px; overflow-x: auto; padding: 0 15px 10px 15px; white-space: nowrap; scrollbar-width: none; }
         .provider-scroll::-webkit-scrollbar { display: none; }
         .provider-tab { background: #132238; border: 1px solid #1e3e62; color: #cbd5e1; padding: 6px 14px; border-radius: 20px; font-size: 12px; cursor: pointer; font-weight: bold; }
@@ -59,6 +58,7 @@
         </div>
     </div>
 
+    <!-- ইউজার ড্যাশবোর্ড (লগইন করার পর শো করবে) -->
     <div class="user-dash" id="user-dash-div">
         <div class="balance-box">
             <div>UID: <span id="lbl-uid" style="color:#ff6500;">-</span></div>
@@ -71,14 +71,15 @@
         </div>
     </div>
 
+    <!-- মেম্বার সেন্টার (লগইন করার পর ড্যাশবোর্ডের নিচেই শো করবে) -->
     <div class="member-center" id="member-center-div">
         <div class="section-heading">Member Center</div>
         <div class="grid-menu">
             <div class="menu-item" onclick="alert('Rewards')"><span>🏆</span>Rewards</div>
             <div class="menu-item" onclick="alert('Bet History')"><span>📊</span>Bet History</div>
             <div class="menu-item" onclick="alert('Profit & Loss')"><span>📈</span>Profit & Loss</div>
-            <div class="menu-item" onclick="alert('Deposit Record')"><span>📑</span>Dep Record</div>
-            <div class="menu-item" onclick="alert('Withdraw Record')"><span>📜</span>Wd Record</div>
+            <div class="menu-item" onclick="openDepositModal()"><span>📑</span>Dep Record</div>
+            <div class="menu-item" onclick="openModal('withdrawModal')"><span>📜</span>Wd Record</div>
             <div class="menu-item" onclick="openReferModal()"><span>👥</span>Invite</div>
             <div class="menu-item" onclick="logoutUser()"><span>🚪</span>Logout</div>
         </div>
@@ -91,7 +92,6 @@
 
     <div style="padding: 0 15px; font-size: 15px; color: #cbd5e1; margin-bottom: 8px;">Providers</div>
     
-    <!-- প্রোভাইডার ট্যাব বা স্ক্রল মেনু -->
     <div class="provider-scroll" id="provider-tabs">
         <div class="provider-tab active" onclick="filterGames('all', this)">All Games</div>
         <div class="provider-tab" onclick="filterGames('evolution', this)">Evolution</div>
@@ -99,13 +99,11 @@
         <div class="provider-tab" onclick="filterGames('jili', this)">Jili</div>
     </div>
 
-    <!-- গেম সার্চ বক্স -->
     <div style="padding: 0 10px 10px 10px;">
         <input type="text" id="game-search-input" placeholder="🔍 গেম সার্চ করুন..." onkeyup="searchGames()" style="width: 100%; padding: 10px; background: #132238; border: 1px solid #1e3e62; color: white; border-radius: 8px; box-sizing: border-box; font-size: 13px;">
     </div>
 
     <div class="game-grid">
-        <!-- গেমগুলো অটোমেটিক লোড হবে -->
         <div style="grid-column: span 2; text-align: center; color: #94a3b8; padding: 20px;">গেম লোড হচ্ছে...</div>
     </div>
 
@@ -201,7 +199,10 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        const apiKey = "C9360812-A9D5-4B4F-A07C-6247BD8543F1";
+        const apiKey = "1D61341F-7540-4D06-B59E-C90759F2179A";
+
+        // ব্যাকএন্ড হিসেবে আপনার Render সার্ভারের সঠিক লাইভ লিংক এখানে বসানো আছে
+        const BACKEND_URL = "https://_4xbet.onrender.com";
 
         let allGamesData = [];
 
@@ -316,10 +317,9 @@
             alert("লিংক কপি হয়েছে!");
         };
 
-        // নিরাপদ গেম লোডিং ফাংশন (JSON Parse Error এড়ানোর জন্য ট্রাই-ক্যাচ ও টেক্সট ভ্যালিডেশন সহ)
         async function loadGames() {
             try {
-                const provResponse = await fetch("/game/providers", {
+                const provResponse = await fetch(`${BACKEND_URL}/api/game/providers`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
                     body: JSON.stringify({ lang: "en" })
@@ -334,7 +334,7 @@
                 if (providers.length > 0) {
                     for (let p of providers.slice(0, 5)) {
                         const pCode = p.provider_code || p.code;
-                        const res = await fetch("/game/games", {
+                        const res = await fetch(`${BACKEND_URL}/api/game/games`, {
                             method: "POST",
                             headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
                             body: JSON.stringify({ provider_code: pCode, lang: "en", offset: 0, limit: 50 })
@@ -354,9 +354,7 @@
                     throw new Error("No games found");
                 }
             } catch (err) {
-                console.warn("API load failed or returned non-JSON. Loading sample test games:", err);
-                
-                // ফলব্যাক বা ডামি গেম ডাটা যাতে সাইট ক্র্যাশ না করে এবং গেম ডিসপ্লে সচল থাকে
+                console.warn("API load failed, loading sample games:", err);
                 allGamesData = [
                     { name: "Gates of Olympus", provider: "evolution", image_url: "https://placehold.co/150x95?text=Gates+Olympus", symbol: "gates_olympus" },
                     { name: "Starlight Princess", provider: "pg", image_url: "https://placehold.co/150x95?text=Starlight", symbol: "starlight_princess" },
@@ -367,7 +365,6 @@
             }
         }
 
-        // গেম রেন্ডার বা স্ক্রিনে দেখানোর ফাংশন
         function renderGames(games) {
             const gameGrid = document.querySelector('.game-grid');
             gameGrid.innerHTML = "";
@@ -394,7 +391,6 @@
             });
         }
 
-        // প্রোভাইডার অনুযায়ী ফিল্টার করার ফাংশন
         window.filterGames = function(provider, element) {
             document.querySelectorAll('.provider-tab').forEach(tab => tab.classList.remove('active'));
             element.classList.add('active');
@@ -419,7 +415,6 @@
             renderGames(targetGames);
         };
 
-        // গেম সার্চ করার ফাংশন
         window.searchGames = function() {
             const keyword = document.getElementById('game-search-input').value.toLowerCase().trim();
             const activeTab = document.querySelector('.provider-tab.active');
@@ -450,13 +445,12 @@
             renderGames(targetGames);
         };
 
-        // গেম লঞ্চ করা
         window.launchGame = async function(gameSymbol) {
             try {
                 const user = auth.currentUser;
                 if (!user) { alert("গেম খেলতে আগে লগইন করুন!"); openModal('loginModal'); return; }
 
-                const response = await fetch("/game/game-url", {
+                const response = await fetch(`${BACKEND_URL}/api/game/game-url`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
                     body: JSON.stringify({ user_code: user.uid, symbol: gameSymbol, lang: "en" })
@@ -472,7 +466,6 @@
             } catch (err) { alert("Error: " + err.message); }
         };
 
-        // পেজ লোড হওয়ার সাথে গেম লিস্ট কল করা
         loadGames();
     </script>
 </body>
